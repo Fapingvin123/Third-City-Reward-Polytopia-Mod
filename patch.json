@@ -1,0 +1,21 @@
+{
+    "improvementData": {
+        "icustomone":{
+            "idx": -1
+        }
+    },
+	"customstuff": {
+        "customone":{
+            "idx": -1
+        },
+        "customtwo":{
+            "idx": -1
+        },
+        "customthree":{
+            "idx": -1
+        },
+        "customfour":{
+            "idx": -1
+        }
+    }
+}
