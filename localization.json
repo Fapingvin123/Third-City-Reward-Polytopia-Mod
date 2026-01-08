@@ -1,14 +1,22 @@
 {
+	"unit_names_rewardwarrior":{
+		"English": "Elite Warrior",
+		"Italian (Italy)": "Guerriero d'Élite"
+	},
 	"wcontroller_reward_customone": {
-		"English": "Reward 1"
+		"English": "Elite Warrior",
+		"Italian (Italy)": "Guerriero d'Élite"
 	},
 	"wcontroller_reward_customtwo": {
-		"English": "Reward 2"
+		"English": "Healing Obelisk",
+		"Italian (Italy)": "Obelisco della Guarigione"
 	},
 	"wcontroller_reward_customthree": {
-		"English": "Reward 3"
+		"English": "Bountiful Lands",
+		"Italian (Italy)": "Terre Prosperose"
 	},
 	"wcontroller_reward_customfour": {
-		"English": "Reward 4"
+		"English": "Free Technology",
+		"Italian (Italy)": "Conoscenza Gratuita"
 	}
 }

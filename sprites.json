@@ -1,0 +1,10 @@
+{
+	"weapon_club_rewardwarrior__": {
+		"pixelsPerUnit": 3000,	
+		"pivot": [0.99, 0.1]
+	},
+	"weapon_club_rewardwarrior_outline__": {
+		"pixelsPerUnit": 3000,	
+		"pivot": [0.99, 0.1]
+	}
+}

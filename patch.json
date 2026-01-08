@@ -1,8 +1,51 @@
 {
-    "improvementData": {
-        "icustomone":{
-            "idx": -1
+    "improvementData":{
+        "createcrop":{
+            "idx": -1,
+            "hidden": true,
+            "creates": [
+				{
+					"resource": "crop"
+				}
+			],
+            "improvementAbilities": [
+				"discrete"
+			],
+            "cost": 0
+        },
+        "createfruit":{
+            "idx": -1,
+            "hidden": true,
+            "creates": [
+				{
+					"resource": "fruit"
+				}
+			],
+            "improvementAbilities": [
+				"discrete"
+			],
+            "cost": 0
         }
+    },
+    "unitData":{
+        "rewardwarrior": {
+			"health": 150,
+			"defence": 20,
+			"movement": 1,
+			"range": 1,
+			"attack": 20,
+			"cost": 3,
+			"unitAbilities": [
+				"dash",
+				"fortify",
+				"land",
+                "independent"
+			],
+			"weapon": 1,
+			"promotionLimit": 3,
+            "prefab": "warrior",
+			"idx": -1
+		}
     },
 	"customstuff": {
         "customone":{
