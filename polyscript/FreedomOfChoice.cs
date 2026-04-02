@@ -178,6 +178,21 @@ public static class Main
 
     }
 
+    private static bool TrySpawnGameOrFruit(TileData citytile, out string decision)
+    {
+        if(citytile.terrain == Polytopia.Data.TerrainData.Type.Field)
+        {
+            decision = "createfruit";
+            return true;
+        }
+        if(citytile.terrain == Polytopia.Data.TerrainData.Type.Forest)
+        {
+            decision = "creategame";
+            return true;
+        }
+        decision = "none"; return false;
+    }
+
     public static void Populate(GameState state, TileData tile, int FruitsToSpawn)
     {
         var citytiles = ActionUtils.GetCityAreaSorted(state, tile);
@@ -185,13 +200,13 @@ public static class Main
         int counter = FruitsToSpawn;
         for (int i = 0; i < citytiles.Count; i++)
         {
-            if (citytiles[i].terrain == Polytopia.Data.TerrainData.Type.Field && citytiles[i].resource == null && citytiles[i].improvement == null)
+            if (TrySpawnGameOrFruit(citytiles[i], out string decision) && citytiles[i].resource == null && citytiles[i].improvement == null)
             {
                 if (counter > 0)
                 {
                     Tile tilerender = MapRenderer.Current.GetTileInstance(tile.coordinates);
                     tilerender.SpawnSparkles();
-                    state.ActionStack.Add(new BuildAction(tile.owner, EnumCache<ImprovementData.Type>.GetType("createfruit"), citytiles[i].coordinates, false));
+                    state.ActionStack.Add(new BuildAction(tile.owner, EnumCache<ImprovementData.Type>.GetType(decision), citytiles[i].coordinates, false));
                     counter--;
                 }
             }
@@ -261,20 +276,22 @@ public static class Main
         }
         if (__instance.Reward == EnumCache<CityReward>.GetType("customfour")) // Free Tech
         {
-            NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!");
-            // Nothing of effect is actually executed here, free tech is chosen via cityreward detection.
-
-            /* Pre-Rework
             var unlockableTech = Main.FOCGetUnlockableTech(playerState);
             if (unlockableTech == null || unlockableTech.Count == 0)
             {
                 state.ActionStack.Add(new IncreaseCurrencyAction(playerState.Id, tile.coordinates, 10, 0));
                 return;
             }
+            if(!playerState.AutoPlay){
+                NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!");
+                return;
+            }
+
+            // AI Still selects a random technology
             var tech = unlockableTech[state.RandomHash.Range(0, unlockableTech.Count, tile.coordinates.X, tile.coordinates.Y)];
             TechData.Type techtype = tech.type;
             state.ActionStack.Add(new ResearchAction(playerState.Id, techtype, 0));
-            return;*/
+            return;
         }
     }
 
@@ -346,17 +363,6 @@ public static class Main
         }
     }
 
-    /*[HarmonyPostfix]
-    [HarmonyPatch(typeof(TechItem), nameof(TechItem.SetData))]
-    private static void OverrideCost(TechData data, TechItem __instance)
-    {
-        if (EligibleFreeTech())
-        {
-            __instance.data.cost = 0;
-            __instance.RefreshState();
-        }
-    }*/
-
     [HarmonyPostfix]
     [HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.GetTechPrice))]
     public static void TechIsActuallyFree(ref int __result, TechData techData, PlayerState playerState, GameState state)
@@ -378,18 +384,8 @@ public static class Main
             __instance.button.CanRegisterHover = true;
             __instance.resourceWidget.label.color = Color.yellow;
             __instance.bg.color = new Color(0.72f, 0.62f, 0.33f);
-            //__instance.resourceWidget.label.text = Localization.Get("foc.gratis"); //voted out
         }
     }
-
-    /*[HarmonyPrefix]
-    [HarmonyPatch(typeof(CommandValidation), nameof(CommandValidation.CanAfford), typeof(PlayerState), typeof(GameState), typeof(TechData))]
-    private static bool TrustMeItIsUnlockable(PlayerState player, GameState gameState, TechData techData, ref bool __result)
-    {
-        if (player.Id != GameManager.LocalPlayer.Id) return true;
-        if (EligibleFreeTech()) { __result = true; return false; }
-        return true;
-    }*/
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(ResearchAction), nameof(ResearchAction.Execute))]
