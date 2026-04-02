@@ -245,22 +245,26 @@ public static class Main
         {
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customone"))
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customone")) // Elite Warrior
         {
             state.ActionStack.Add(new TrainAction(playerState.Id, EnumCache<UnitData.Type>.GetType("rewardwarrior"), __instance.Coordinates, 0));
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo"))
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo")) // Healing Obelisk
         {
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customthree"))
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customthree")) // Bountiful Lands
         {
             Main.Populate(state, tile, 5);
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customfour"))
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customfour")) // Free Tech
         {
+            NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!");
+            // Nothing of effect is actually executed here, free tech is chosen via cityreward detection.
+
+            /* Pre-Rework
             var unlockableTech = Main.FOCGetUnlockableTech(playerState);
             if (unlockableTech == null || unlockableTech.Count == 0)
             {
@@ -270,7 +274,7 @@ public static class Main
             var tech = unlockableTech[state.RandomHash.Range(0, unlockableTech.Count, tile.coordinates.X, tile.coordinates.Y)];
             TechData.Type techtype = tech.type;
             state.ActionStack.Add(new ResearchAction(playerState.Id, techtype, 0));
-            return;
+            return;*/
         }
     }
 
@@ -306,7 +310,122 @@ public static class Main
             }
         }
     }
-#endregion
+    #endregion
+
+    #region FreeTechRework
+
+    private static TechView? currentTechView = null;
+
+    private static bool PlayerCanFreeTech(PlayerState player, GameState gameState)
+    {
+        var cities = player.GetCityTiles(gameState);
+        bool flag = false;
+        foreach (TileData city in cities)
+        {
+            if (city != null && city.improvement != null && city.improvement.type == ImprovementData.Type.City && city.owner == player.Id)
+            {
+                if (city.improvement.HasReward(EnumCache<CityReward>.GetType("customfour"))) { flag = true; break; }
+            }
+        }
+        return flag;
+    }
+
+    private static bool EligibleFreeTech()
+    {
+        return GameManager.LocalPlayer != null && GameManager.GameState != null && PlayerCanFreeTech(GameManager.LocalPlayer, GameManager.GameState);
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(TechView), nameof(TechView.UpdateInfoText))]
+    private static void CanAlsoUnlockFreeTech(TechView __instance)
+    {
+        currentTechView = __instance;
+        if (EligibleFreeTech())
+        {
+            __instance.infoText.text += Localization.Get("foc.freetechavailable");
+        }
+    }
+
+    /*[HarmonyPostfix]
+    [HarmonyPatch(typeof(TechItem), nameof(TechItem.SetData))]
+    private static void OverrideCost(TechData data, TechItem __instance)
+    {
+        if (EligibleFreeTech())
+        {
+            __instance.data.cost = 0;
+            __instance.RefreshState();
+        }
+    }*/
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.GetTechPrice))]
+    public static void TechIsActuallyFree(ref int __result, TechData techData, PlayerState playerState, GameState state)
+    {
+        if (EligibleFreeTech() && playerState.Id == GameManager.LocalPlayer.Id)
+        {
+            __result = 0;
+        }
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(TechItem), nameof(TechItem.RefreshState))]
+    private static void OverrideState(TechItem __instance)
+    {
+        if (EligibleFreeTech() && (__instance.state == TechItem.State.Expensive || __instance.state == TechItem.State.Available))
+        {
+            __instance.state = TechItem.State.Available;
+            __instance.outline.color = Color.yellow;
+            __instance.button.CanRegisterHover = true;
+            __instance.resourceWidget.label.color = Color.yellow;
+            __instance.bg.color = new Color(0.72f, 0.62f, 0.33f);
+            //__instance.resourceWidget.label.text = Localization.Get("foc.gratis"); //voted out
+        }
+    }
+
+    /*[HarmonyPrefix]
+    [HarmonyPatch(typeof(CommandValidation), nameof(CommandValidation.CanAfford), typeof(PlayerState), typeof(GameState), typeof(TechData))]
+    private static bool TrustMeItIsUnlockable(PlayerState player, GameState gameState, TechData techData, ref bool __result)
+    {
+        if (player.Id != GameManager.LocalPlayer.Id) return true;
+        if (EligibleFreeTech()) { __result = true; return false; }
+        return true;
+    }*/
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(ResearchAction), nameof(ResearchAction.Execute))]
+    private static void RemoveOneFreeTechReward(ResearchAction __instance, GameState state)
+    {
+        if (__instance.PlayerId != GameManager.LocalPlayer.Id) return;
+        if (EligibleFreeTech())
+        {
+            PlayerState player = GameManager.LocalPlayer;
+            var cities = player.GetCityTiles(state);
+            foreach (TileData city in cities)
+            {
+                if (city != null && city.improvement != null && city.improvement.type == ImprovementData.Type.City && city.owner == player.Id)
+                {
+                    if (city.improvement.HasReward(EnumCache<CityReward>.GetType("customfour")))
+                    {
+                        Il2CppSystem.Collections.Generic.List<CityReward> newlist = new();
+                        bool flag = false;
+                        foreach (CityReward reward in city.improvement.rewards)
+                        {
+                            if (reward == EnumCache<CityReward>.GetType("customfour") && !flag)
+                            {
+                                flag = true; continue;
+                            }
+                            newlist.Add(reward);
+                        }
+                        city.improvement.rewards = newlist;
+                        break;
+                    }
+                }
+            }
+            currentTechView.RefreshTechItems();
+        }
+    }
+
+    #endregion
 }
 
 

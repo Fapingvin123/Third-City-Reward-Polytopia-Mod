@@ -18,5 +18,18 @@
 	"wcontroller_reward_customfour": {
 		"English": "Free Technology",
 		"Italian (Italy)": "Conoscenza Gratuita"
+	},
+
+	"foc_freetechdesc":{
+		"English": "Select a free technology from the tech tree!",
+		"Italian (Italy)": "Scegli una conoscenza gratuita dall'albero di conoscenza!"
+	},
+	"foc_freetechavailable":{
+		"English": "\nNEXT TECHNOLOGY IS FREE TO UNLOCK!",
+		"Italian (Italy)": "\nLA PROSSIMA CONOSCENZA È GRATIS!"
+	},
+	"foc_gratis":{
+		"English": "FREE",
+		"Italian (Italy)": "GRATIS"
 	}
 }
