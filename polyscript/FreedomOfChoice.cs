@@ -9,11 +9,6 @@ using Il2CppMicrosoft.Win32;
 using Il2CppSystem;
 using Il2CppSystem.Linq.Expressions.Interpreter;
 using Polytopia.Data;
-using PolytopiaBackendBase.Game;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Properties;
-using Unity.Services.Analytics.Internal;
 using UnityEngine;
 using UnityEngine.UIElements.UIR;
 
@@ -24,7 +19,7 @@ namespace focmod;
 public static class Main
 {
     public const int bundleSize = 3;
-    private static ManualLogSource? modLogger;
+    private static ManualLogSource modLogger;
     public static void Load(ManualLogSource logger)
     {
         //PolyMod.Loader.AddPatchDataType("unitEffect", typeof(UnitEffect));
@@ -35,163 +30,44 @@ public static class Main
         logger.LogMessage("City Rewards dll loaded.");
     }
 
-    /*[HarmonyPostfix]
-    [HarmonyPatch(typeof(UIIconData), nameof(UIIconData.GetImage))]
-    public static void CustomImage(ref UnityEngine.UI.Image __result, string id)
+    #region Visuals
+
+
+    public static bool isCustomReward(string s)
     {
-        Sprite? sprite;
-        int? idx = null;
-        List<string> idparts = id.Split("_").ToList();
-        int minimumidx = 1000;
-        foreach (string item in idparts)
+        //Is it even a city reward?
+        string[] words = s.Split("_");
+        if (words[1] != "rewards")
         {
-            if (int.TryParse(item, out int parsedIdx))
-            {
-                if (parsedIdx >= minimumidx)
-                {
-                    idx = parsedIdx;
-                }
-            }
+            return false;
         }
 
-        if (idx != null)
-        {
-            foreach (var targetType in PolyMod.Loader.typeMappings.Values)
-            {
-                
-            }
-        }
-    }*/
 
-
-
-
-    //AI will always choose SuperUnit in Domination, Might and Sandbox
-    //Otherwise, whatever the original code for choosing was, this keeps it 2/3 of the time
-    //1/3 of the time it chooses my custom reward
-    //Nevermind, this is broken for some reason, can't even result a cityreward.superunit
-    /*[HarmonyPostfix]
-    [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
-    public static void AIChoosesReward(ref CityReward __result, GameState gameState, TileData tile, CityReward[] rewards)
-    {
-
-        CityReward thirdoption = EnumCache<CityReward>.GetType("customfour");
-        switch (tile.improvement.level)
-        {
-            case 1:
-                thirdoption = EnumCache<CityReward>.GetType("customone");
-                break;
-            case 2:
-                thirdoption = EnumCache<CityReward>.GetType("customtwo");
-                break;
-            case 3:
-                thirdoption = EnumCache<CityReward>.GetType("customthree");
-                break;
-            case 4:
-                thirdoption = EnumCache<CityReward>.GetType("customfour");
-                break;
-        }
-
-        int randomnum;
-        System.Random RNG = new System.Random();
-        randomnum = RNG.Next(0, 3);
-
-        int num = System.Array.IndexOf<CityReward>(rewards, CityReward.SuperUnit);
-
-        var settings = gameState.Settings;
-
-        if ((num != -1) && ((settings.BaseGameMode == GameMode.Might) || (settings.BaseGameMode == GameMode.Domination) || (settings.BaseGameMode == GameMode.Sandbox)))
-        {
-            __result = CityReward.SuperUnit;
-        }
-        else
-        {
-            if (randomnum == 0)
-            {
-                gameState.GameLogicData.TryGetData(ImprovementData.Type.City, out ImprovementData improvementData);
-                //__result = ImprovementDataExtensions.GetCityRewardsForLevel(improvementData, tile.improvement.level)[2];
-                __result = thirdoption;
-            }
-        }
-    }*/
-
-
-    /*[HarmonyPrefix]
-    [HarmonyPatch(typeof(CommandBase), nameof(CommandBase.IsValid), typeof(GameState))]
-    public static bool ByPassValidation(ref bool __result, CommandBase __instance, GameState state)
-    {
-        if (state.Settings.GameType == GameType.Competitive || state.Settings.GameType == GameType.Multiplayer)
+        if (int.TryParse(words[2], out int whatever))
         {
             return true;
         }
-        else if (__instance.GetCommandType() == CommandType.CityReward)
-        {
-            __result = true;
-            return false;
-        }
-        return true;
-    }*/
-
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
-    public static bool AI_ChooseCityReward(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
-    {
-        GameLogicData gld = gameState.GameLogicData;
-        CityReward[] rewardarray = GetRewardsForLevel(gld.GetImprovementData(tile.improvement.type), tile.improvement.level -1);
-
-
-
-        System.Random random = new System.Random();
-        int num = random.Next(0, rewardarray.Length);
-
-
-        __result = rewardarray[num];
 
         return false;
     }
 
-    public static CityReward[] GetRewardsForLevel(ImprovementData data, int level)
+    public static CityReward getEnum(string s)
     {
-        return data.GetCityRewardsForLevel(level);
+        int a = int.Parse(s.Split("_")[2]);
+        return (CityReward)a;
     }
 
-    /*[HarmonyPrefix]
-    [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
-    public static bool AI_ChooseCityReward(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
+
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(UIIconData), nameof(UIIconData.GetSprite))]
+    public static void Override(UIIconData __instance, ref Sprite __result, string id)
     {
-        modLogger.LogMessage("Trying to select reward for AI");
-        GameLogicData gld = gameState.GameLogicData;
-
-        CityReward thirdoption = EnumCache<CityReward>.GetType("customfour");
-        switch (tile.improvement.level)
+        if (Main.isCustomReward(id))
         {
-            case 1:
-                thirdoption = EnumCache<CityReward>.GetType("customone");
-                break;
-            case 2:
-                thirdoption = EnumCache<CityReward>.GetType("customtwo");
-                break;
-            case 3:
-                thirdoption = EnumCache<CityReward>.GetType("customthree");
-                break;
-            case 4:
-                thirdoption = EnumCache<CityReward>.GetType("customfour");
-                break;
+            __result = PolyMod.Registry.GetSprite(EnumCache<CityReward>.GetName(Main.getEnum(id)));
         }
-
-
-        System.Random random = new System.Random();
-        int num = random.Next(0, 3);
-        modLogger.LogMessage("Rolled:" + num);
-
-        if (num != 0)
-        {
-            modLogger.LogWarning("Chosen thirdoption");
-            __result = thirdoption;
-            return false;
-        }
-        else return true;
-    }*/
+    }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.RefreshCity))]
@@ -209,8 +85,8 @@ public static class Main
 
         if (cityhasobelisk)
         {
-            TribeData.Type tribe = __instance.Tribe;
-            SkinType skinType = __instance.SkinType;
+            PolytopiaBackendBase.Common.TribeType tribe = __instance.Tribe;
+            PolytopiaBackendBase.Common.SkinType skinType = __instance.SkinType;
             CityPlot nextRandomPlot = __instance.GetNextRandomPlot(ref num, num2);
             //int.TryParse(EnumCache<CityReward>.GetType("customtwo").ToString().Split("_")[2], out int enumnum);
             PolytopiaSpriteRenderer house = __instance.GetHouse(tribe, 1555, skinType); //temporary solution
@@ -233,7 +109,7 @@ public static class Main
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.GetHouse))]
-    public static void GetObelisk(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, TribeData.Type tribe = TribeData.Type.Xinxi, int type = 1, SkinType skinType = SkinType.Default)
+    public static void GetObelisk(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, PolytopiaBackendBase.Common.TribeType tribe = PolytopiaBackendBase.Common.TribeType.Xinxi, int type = 1, PolytopiaBackendBase.Common.SkinType skinType = PolytopiaBackendBase.Common.SkinType.Default)
     {
         //int.TryParse(EnumCache<CityReward>.GetType("customtwo").ToString().Split("_")[2], out int enumnum);
         if (type == 1555)
@@ -242,8 +118,35 @@ public static class Main
         }
     }
 
+    #endregion
+    #region AI
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
+    public static bool AI_ChooseCityReward(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
+    {
+        GameLogicData gld = gameState.GameLogicData;
+        CityReward[] rewardarray = GetRewardsForLevel(gld.GetImprovementData(tile.improvement.type), tile.improvement.level - 1);
 
 
+
+        System.Random random = new System.Random();
+        int num = random.Next(0, rewardarray.Length);
+
+
+        __result = rewardarray[num];
+
+        return false;
+    }
+
+    public static CityReward[] GetRewardsForLevel(ImprovementData data, int level)
+    {
+        return data.GetCityRewardsForLevel(level);
+    }
+
+    #endregion
+
+    #region Custom Rewards
     [HarmonyPostfix]
     [HarmonyPatch(typeof(ImprovementDataExtensions), nameof(ImprovementDataExtensions.GetCityRewardsForLevel))]
     public static void GetCityRewardsForLevelOverwrite(ref Il2CppStructArray<CityReward> __result, ImprovementData data, int level)
@@ -275,42 +178,6 @@ public static class Main
 
     }
 
-    public static bool isCustomReward(string s)
-    {
-        //Is it even a city reward?
-        string[] words = s.Split("_");
-        if (words[1] != "rewards")
-        {
-            return false;
-        }
-
-
-        if (int.TryParse(words[2], out int whatever))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    public static CityReward getEnum(string s)
-    {
-        int a = int.Parse(s.Split("_")[2]);
-        return (CityReward)a;
-    }
-
-
-    
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(UIIconData), nameof(UIIconData.GetSprite))]
-    public static void Override(UIIconData __instance, ref Sprite __result, string id)
-    {
-        if (Main.isCustomReward(id))
-        {
-            __result = PolyMod.Registry.GetSprite(EnumCache<CityReward>.GetName(Main.getEnum(id)));
-        }
-    }
-
     public static void Populate(GameState state, TileData tile, int FruitsToSpawn)
     {
         var citytiles = ActionUtils.GetCityAreaSorted(state, tile);
@@ -333,36 +200,36 @@ public static class Main
     }
 
     public static List<TechData> FOCGetUnlockableTech(PlayerState player)
-		{
+    {
         var gld = GameManager.GameState.GameLogicData;
-			if (player.tribe == TribeData.Type.None)
+        if (player.tribe == PolytopiaBackendBase.Common.TribeType.None)
         {
             return null;
         }
-			TribeData tribe;
-			if (GameManager.GameState.GameLogicData.TryGetData(player.tribe, out tribe))
-			{
-				List<TechData> list = new List<TechData>();
-				for (int i = 0; i < player.availableTech.Count; i++)
-				{
-					TechData @override;
-					if (gld.TryGetData(player.availableTech[i], out @override))
-					{
-						@override = gld.GetOverride(@override, tribe);
-						foreach (TechData techData in @override.techUnlocks)
-						{
-							TechData override2 = gld.GetOverride(techData, tribe);
-							if (!player.HasTech(override2.type) && !list.Contains(override2))
-							{
-								list.Add(override2);
-							}
-						}
-					}
-				}
-				return list;
-			}
-			return null;
-		}
+        TribeData tribe;
+        if (GameManager.GameState.GameLogicData.TryGetData(player.tribe, out tribe))
+        {
+            List<TechData> list = new List<TechData>();
+            for (int i = 0; i < player.availableTech.Count; i++)
+            {
+                TechData @override;
+                if (gld.TryGetData(player.availableTech[i], out @override))
+                {
+                    @override = gld.GetOverride(@override, tribe);
+                    foreach (TechData techData in @override.techUnlocks)
+                    {
+                        TechData override2 = gld.GetOverride(techData, tribe);
+                        if (!player.HasTech(override2.type) && !list.Contains(override2))
+                        {
+                            list.Add(override2);
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+        return null;
+    }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CityRewardAction), nameof(CityRewardAction.Execute))]
@@ -439,7 +306,7 @@ public static class Main
             }
         }
     }
-
+#endregion
 }
 
 
