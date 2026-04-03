@@ -1,8 +1,4 @@
-using System.ComponentModel;
-using System.Globalization;
-using System.Runtime.CompilerServices;
 using BepInEx.Logging;
-using EnumsNET;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppMicrosoft.Win32;
@@ -273,7 +269,7 @@ public static class Main
             state.ActionStack.Add(new TrainAction(playerState.Id, @override.type, __instance.Coordinates, 0));
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo")) // Healing Obelisk
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo")) // Barracks
         {
             return;
         }
@@ -304,35 +300,16 @@ public static class Main
         }
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(EndTurnCommand), nameof(EndTurnCommand.ExecuteDefault))]
-    private static void EndTurnCommand_ExecuteDefault(EndTurnCommand __instance, GameState state)
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(MapDataExtensions), nameof(MapDataExtensions.GetCityUnitCount))]
+    private static void Barracks(MapData mapData, WorldCoordinates cityCoordinates, ref int __result)
     {
-
-        for (int i = 0; i < state.Map.Tiles.Length; i++)
+        TileData tile = mapData.GetTile(cityCoordinates);
+        if(tile != null && tile.improvement != null && tile.improvement.type == ImprovementData.Type.City)
         {
-            TileData tileData = state.Map.Tiles[i];
-            if (tileData.unit != null && tileData.unit.owner == __instance.PlayerId && tileData.improvement != null)
+            if (tile.improvement.HasReward(EnumCache<CityReward>.GetType("customtwo")))
             {
-                if (!tileData.IsBeingCaptured(state) && tileData.improvement.type == ImprovementData.Type.City)
-                {
-                    if (tileData.improvement.HasReward(EnumCache<CityReward>.GetType("customtwo")) && tileData.unit.health < tileData.unit.GetMaxHealth(state))
-                    {
-                        Tile tile = MapRenderer.Current.GetTileInstance(tileData.coordinates);
-                        UnitState unit = tileData.unit;
-                        int hpincrease = 20;
-                        if (unit.health + 20 >= unit.GetMaxHealth(state))
-                        {
-                            hpincrease = (unit.GetMaxHealth(state) - unit.health);
-                        }
-                        if (unit.HasEffect(UnitEffect.Poisoned))
-                        {
-                            unit.RemoveEffect(UnitEffect.Poisoned);
-                        }
-                        tileData.unit.health += (ushort)hpincrease;
-                        tile.Heal(hpincrease);
-                    }
-                }
+                __result--;
             }
         }
     }
