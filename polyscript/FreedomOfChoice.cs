@@ -8,8 +8,10 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppMicrosoft.Win32;
 using Il2CppSystem;
 using Il2CppSystem.Linq.Expressions.Interpreter;
+using PolyMod;
 using Polytopia.Data;
 using UnityEngine;
+using UnityEngine.UIElements;
 using UnityEngine.UIElements.UIR;
 
 namespace focmod;
@@ -18,12 +20,9 @@ namespace focmod;
 
 public static class Main
 {
-    public const int bundleSize = 3;
-    private static ManualLogSource modLogger;
+    public static ManualLogSource modLogger;
     public static void Load(ManualLogSource logger)
     {
-        //PolyMod.Loader.AddPatchDataType("unitEffect", typeof(UnitEffect));
-        PolyMod.Registry.autoidx++;
         PolyMod.Loader.AddPatchDataType("customstuff", typeof(CityReward));
         Harmony.CreateAndPatchAll(typeof(Main));
         modLogger = logger;
@@ -32,21 +31,38 @@ public static class Main
 
     #region Visuals
 
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(RewardPopup), nameof(RewardPopup.SetRewards))]
+    private static void RewardPopup_RewardWarriorRender(RewardPopup __instance, PlayerState playerState, Il2CppStructArray<CityReward> rewards, bool isReplay = false)
+    {
+        var gameLogicData = GameManager.GameState.GameLogicData;
+        gameLogicData.TryGetData(playerState.tribe, out TribeData tribeData);
+        int i = 0;
+        foreach (var reward in __instance.rewardButtonsList)
+        {
+            if (rewards[i] == EnumCache<CityReward>.GetType("customone"))
+            {
+                UnitData @override;
+                gameLogicData.TryGetData(Parse.GetOverride(playerState.tribe), out @override);
+                UIUnitRenderer uiunitRenderer = UIUtils.GetUIUnitRenderer(@override.type, tribeData, playerState.skinType);
+                reward.sprite = null;
+                reward.SetUnitRenderer(uiunitRenderer);
+
+            }
+            i++;
+        }
+    }
+
 
     public static bool isCustomReward(string s)
     {
         //Is it even a city reward?
         string[] words = s.Split("_");
         if (words[1] != "rewards")
-        {
             return false;
-        }
-
 
         if (int.TryParse(words[2], out int whatever))
-        {
             return true;
-        }
 
         return false;
     }
@@ -69,6 +85,16 @@ public static class Main
         }
     }
 
+    private static void AddHouseIfNotPresent(CityPlot plot, PolytopiaSpriteRenderer house)
+    {
+        bool flag = false;
+        foreach (var h in plot.houses)
+        {
+            if (h.sprite == house.sprite) { flag = true; break; }
+        }
+        if (!flag) plot.AddHouse(house);
+    }
+
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.RefreshCity))]
     public static void insertObelisk(CityRenderer __instance)
@@ -78,43 +104,18 @@ public static class Main
             return;
         }
         var a = GameManager.GameState.Map.GetTile(__instance.Coordinates);
-        a.improvement.HasReward(EnumCache<CityReward>.GetType("customtwo"));
         bool cityhasobelisk = a.improvement.HasReward(EnumCache<CityReward>.GetType("customtwo"));
-        int num = 100;
-        int num2 = 9;
 
         if (cityhasobelisk)
         {
             PolytopiaBackendBase.Common.TribeType tribe = __instance.Tribe;
             PolytopiaBackendBase.Common.SkinType skinType = __instance.SkinType;
-            CityPlot nextRandomPlot = __instance.GetNextRandomPlot(ref num, num2);
-            //int.TryParse(EnumCache<CityReward>.GetType("customtwo").ToString().Split("_")[2], out int enumnum);
-            PolytopiaSpriteRenderer house = __instance.GetHouse(tribe, 1555, skinType); //temporary solution
-            int n = nextRandomPlot.houses.Count;
-            bool hasObelisk = false;
-            for (int i = 0; i < n; i++)
-            {
-                if (nextRandomPlot.houses[i].sprite == PolyMod.Registry.GetSprite("healobelisk"))
-                {
-                    hasObelisk = true;
-                    break;
-                }
-            }
-            if (!hasObelisk)
-            {
-                nextRandomPlot.AddHouse(house);
-            }
-        }
-    }
-
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.GetHouse))]
-    public static void GetObelisk(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, PolytopiaBackendBase.Common.TribeType tribe = PolytopiaBackendBase.Common.TribeType.Xinxi, int type = 1, PolytopiaBackendBase.Common.SkinType skinType = PolytopiaBackendBase.Common.SkinType.Default)
-    {
-        //int.TryParse(EnumCache<CityReward>.GetType("customtwo").ToString().Split("_")[2], out int enumnum);
-        if (type == 1555)
-        {
-            __result.sprite = PolyMod.Registry.GetSprite("healobelisk");
+            PolytopiaSpriteRenderer house = __instance.GetHouse(tribe, __instance.HOUSE_WORKSHOP, skinType);
+            house.sprite = PolyMod.Registry.GetSprite("healobelisk");
+            int count = __instance.plots.Count;
+            int num = (int)System.Math.Floor(System.Math.Sqrt(count));
+            //AddHouseIfNotPresent(__instance.plots[(num*(num-1))/2], house);
+            AddHouseIfNotPresent(__instance.plots[((num*(num+1))/2) - 1], house);
         }
     }
 
@@ -178,16 +179,21 @@ public static class Main
 
     }
 
-    private static bool TrySpawnGameOrFruit(TileData citytile, out string decision)
+    private static bool TrySpawnResource(TileData citytile, out string decision)
     {
-        if(citytile.terrain == Polytopia.Data.TerrainData.Type.Field)
+        if (citytile.terrain == Polytopia.Data.TerrainData.Type.Field)
         {
             decision = "createfruit";
             return true;
         }
-        if(citytile.terrain == Polytopia.Data.TerrainData.Type.Forest)
+        if (citytile.terrain == Polytopia.Data.TerrainData.Type.Forest)
         {
             decision = "creategame";
+            return true;
+        }
+        if (citytile.terrain == Polytopia.Data.TerrainData.Type.Water)
+        {
+            decision = "createfish";
             return true;
         }
         decision = "none"; return false;
@@ -200,7 +206,7 @@ public static class Main
         int counter = FruitsToSpawn;
         for (int i = 0; i < citytiles.Count; i++)
         {
-            if (TrySpawnGameOrFruit(citytiles[i], out string decision) && citytiles[i].resource == null && citytiles[i].improvement == null)
+            if (TrySpawnResource(citytiles[i], out string decision) && citytiles[i].resource == null && citytiles[i].improvement == null)
             {
                 if (counter > 0)
                 {
@@ -256,13 +262,15 @@ public static class Main
             return;
         }
         PlayerState playerState;
-        if (!state.TryGetPlayer(tile.owner, out playerState))
+        if (!state.TryGetPlayer(tile.owner, out playerState) || !GameManager.GameState.GameLogicData.TryGetData(playerState.tribe, out TribeData tribeData))
         {
             return;
         }
-        if (__instance.Reward == EnumCache<CityReward>.GetType("customone")) // Elite Warrior
+        if (__instance.Reward == EnumCache<CityReward>.GetType("customone")) // Elite Warrior / Free Unit
         {
-            state.ActionStack.Add(new TrainAction(playerState.Id, EnumCache<UnitData.Type>.GetType("rewardwarrior"), __instance.Coordinates, 0));
+            GameManager.GameState.GameLogicData.TryGetData(Parse.GetOverride(playerState.tribe), out UnitData @override);
+            @override = GameManager.GameState.GameLogicData.GetOverride(@override, tribeData);
+            state.ActionStack.Add(new TrainAction(playerState.Id, @override.type, __instance.Coordinates, 0));
             return;
         }
         if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo")) // Healing Obelisk
@@ -282,7 +290,8 @@ public static class Main
                 state.ActionStack.Add(new IncreaseCurrencyAction(playerState.Id, tile.coordinates, 10, 0));
                 return;
             }
-            if(!playerState.AutoPlay){
+            if (!playerState.AutoPlay)
+            {
                 NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!");
                 return;
             }
@@ -331,7 +340,7 @@ public static class Main
 
     #region FreeTechRework
 
-    private static TechView? currentTechView = null;
+    private static TechView currentTechView = null;
 
     private static bool PlayerCanFreeTech(PlayerState player, GameState gameState)
     {

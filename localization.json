@@ -4,8 +4,8 @@
 		"Italian (Italy)": "Guerriero d'Élite"
 	},
 	"wcontroller_reward_customone": {
-		"English": "Elite Warrior",
-		"Italian (Italy)": "Guerriero d'Élite"
+		"English": "Free Unit",
+		"Italian (Italy)": "Unità Gratuita"
 	},
 	"wcontroller_reward_customtwo": {
 		"English": "Healing Obelisk",
@@ -27,9 +27,5 @@
 	"foc_freetechavailable":{
 		"English": "\nNEXT TECHNOLOGY IS FREE TO UNLOCK!",
 		"Italian (Italy)": "\nLA PROSSIMA CONOSCENZA È GRATIS!"
-	},
-	"foc_gratis":{
-		"English": "FREE",
-		"Italian (Italy)": "GRATIS"
 	}
 }

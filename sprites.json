@@ -6,5 +6,9 @@
 	"weapon_club_rewardwarrior_outline__": {
 		"pixelsPerUnit": 3000,	
 		"pivot": [0.99, 0.1]
+	},
+	"healobelisk__": {
+		"pixelsPerUnit": 1490,
+		"pivot": [0.5, -0.15]
 	}
 }

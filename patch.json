@@ -1,4 +1,9 @@
 {
+    "tribeData":{
+        "elyrion": {
+            "rewardoneOverride": "polytaur"
+        }
+    },
     "improvementData":{
         "creategame":{
             "idx": -1,
@@ -19,6 +24,19 @@
             "creates": [
 				{
 					"resource": "fruit"
+				}
+			],
+            "improvementAbilities": [
+				"discrete"
+			],
+            "cost": 0
+        },
+        "createfish":{
+            "idx": -1,
+            "hidden": true,
+            "creates": [
+				{
+					"resource": "fish"
 				}
 			],
             "improvementAbilities": [
