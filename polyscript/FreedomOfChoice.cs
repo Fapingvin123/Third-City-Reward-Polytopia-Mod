@@ -129,9 +129,9 @@ public static class Main
     #endregion
     #region AI
 
-    [HarmonyPrefix]
+    /*[HarmonyPrefix]
     [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
-    public static bool AI_ChooseCityReward(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
+    private static bool AI_ChooseCityReward(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
     {
         GameLogicData gld = gameState.GameLogicData;
         CityReward[] rewardarray = GetRewardsForLevel(gld.GetImprovementData(tile.improvement.type), tile.improvement.level - 1);
@@ -141,10 +141,39 @@ public static class Main
         System.Random random = new System.Random();
         int num = random.Next(0, rewardarray.Length);
 
-
+        Main.modLogger.LogMessage("AI chose reward: "+rewardarray[num]);
+        if(int.TryParse(rewardarray[num].ToString(), out int value))
+        {
+            modLogger.LogMessage("\n\nDING_Prefix\n");
+            modLogger.LogMessage(tile.coordinates);
+            gameState.TryGetPlayer(tile.owner, out PlayerState player);
+            modLogger.LogMessage(player.UserName);
+        }
         __result = rewardarray[num];
 
         return false;
+    }*/
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(AI), nameof(AI.ChooseCityReward))]
+    private static void AI_Choose(GameState gameState, TileData tile, CityReward[] rewards, ref CityReward __result)
+    {
+        
+        GameLogicData gld = gameState.GameLogicData;
+        CityReward[] rewardarray = GetRewardsForLevel(gld.GetImprovementData(tile.improvement.type), tile.improvement.level - 1);
+
+        System.Random random = new System.Random();
+        int num = random.Next(0, rewardarray.Length);
+
+        /*Main.modLogger.LogMessage("AI chose reward: "+rewardarray[num]);
+        if(int.TryParse(rewardarray[num].ToString(), out int value))
+        {
+            modLogger.LogMessage("\n\nDING_Postfix\n");
+            modLogger.LogMessage(tile.coordinates);
+            gameState.TryGetPlayer(tile.owner, out PlayerState player);
+            modLogger.LogMessage(player.UserName);
+        }*/
+        __result = rewardarray[num];
     }
 
     public static CityReward[] GetRewardsForLevel(ImprovementData data, int level)
@@ -263,6 +292,7 @@ public static class Main
     [HarmonyPatch(typeof(CityRewardAction), nameof(CityRewardAction.Execute))]
     public static void CustomRewards(CityRewardAction __instance, GameState state)
     {
+        //Main.modLogger.LogMessage("Executing city reward "+__instance.Reward.ToString()+" for coordinates "+__instance.Coordinates);
         TileData tile = state.Map.GetTile(__instance.Coordinates);
         if (tile == null || tile.improvement == null) //Safety first
         {
@@ -273,8 +303,10 @@ public static class Main
         {
             return;
         }
+        //Main.modLogger.LogMessage("Passed first rounds of checks");
         if (__instance.Reward == EnumCache<CityReward>.GetType("customone")) // Elite Warrior / Free Unit
         {
+            //Main.modLogger.LogMessage("Recognized that reward is elite warrior");
             GameManager.GameState.GameLogicData.TryGetData(Parse.GetOverride(playerState.tribe), out UnitData @override);
             @override = GameManager.GameState.GameLogicData.GetOverride(@override, tribeData);
             state.ActionStack.Add(new PromoteAction(playerState.Id, tile.coordinates));
@@ -285,6 +317,7 @@ public static class Main
         }
         if (__instance.Reward == EnumCache<CityReward>.GetType("customtwo")) // Barracks
         {
+            //Main.modLogger.LogMessage("Recognized that reward is barracks");
             return;
         }
         if (__instance.Reward == EnumCache<CityReward>.GetType("customthree")) // Bountiful Lands
