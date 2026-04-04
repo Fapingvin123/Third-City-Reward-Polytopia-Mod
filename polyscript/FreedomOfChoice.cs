@@ -107,11 +107,30 @@ public static class Main
             PolytopiaBackendBase.Common.TribeType tribe = __instance.Tribe;
             PolytopiaBackendBase.Common.SkinType skinType = __instance.SkinType;
             PolytopiaSpriteRenderer house = __instance.GetHouse(tribe, __instance.HOUSE_WORKSHOP, skinType);
-            house.sprite = PolyMod.Registry.GetSprite("healobelisk");
+            house.sprite = PolyMod.Registry.GetSprite("barracks");
             int count = __instance.plots.Count;
             int num = (int)System.Math.Floor(System.Math.Sqrt(count));
             //AddHouseIfNotPresent(__instance.plots[(num*(num-1))/2], house);
+
+            /* Put Barracks besides the city? (Doesn't work, new tile obstructs it)
             AddHouseIfNotPresent(__instance.plots[((num*(num+1))/2) - 1], house);
+            var House = __instance.plots[((num*(num+1))/2) - 1].houses[^1];
+            float x = 0f;
+	        float y = 0f;
+	        House.transform.localPosition = new Vector3(x, y);*/
+
+            // Put Barracks on the tallest column so it doesnt obstruct anything with its post-rendering rendering
+            int tallestplotidx = 0;
+            int tallestplotamount = -1;
+            for(int i=1; i<count; i++) //goes from 1 so it doesnt appear on capital
+            {
+                if(__instance.plots[i].floors > tallestplotamount)
+                {
+                    tallestplotamount = __instance.plots[i].floors;
+                    tallestplotidx = i;
+                }
+            }
+            AddHouseIfNotPresent(__instance.plots[tallestplotidx], house);
         }
     }
 

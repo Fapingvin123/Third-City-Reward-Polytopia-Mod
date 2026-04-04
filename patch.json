@@ -2,6 +2,15 @@
     "tribeData":{
         "elyrion": {
             "rewardoneOverride": "polytaur"
+        },
+        "cymanti": {
+            "rewardoneOverride": "hexapod"
+        },
+        "polaris": {
+            "rewardoneOverride": "mooni"
+        },
+        "aquarion": {
+            "rewardoneOverride": "amphibian"
         }
     },
     "improvementData":{
