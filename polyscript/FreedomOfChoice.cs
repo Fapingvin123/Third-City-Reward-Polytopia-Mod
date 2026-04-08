@@ -335,7 +335,7 @@ public static class Main
             }
             if (!playerState.AutoPlay)
             {
-                NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!");
+                //NotificationManager.Notify(Localization.Get("foc.freetechdesc"), Localization.Get("wcontroller.reward.customfour") + "!", playerState);
                 return;
             }
 
@@ -382,7 +382,12 @@ public static class Main
 
     private static bool EligibleFreeTech()
     {
-        return GameManager.LocalPlayer != null && GameManager.GameState != null && PlayerCanFreeTech(GameManager.LocalPlayer, GameManager.GameState);
+        return EligibleFreeTech(GameManager.LocalPlayer);
+    }
+
+    private static bool EligibleFreeTech(PlayerState player)
+    {
+        return player != null && GameManager.GameState != null && PlayerCanFreeTech(player, GameManager.GameState);
     }
 
     [HarmonyPostfix]
@@ -400,7 +405,7 @@ public static class Main
     [HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.GetTechPrice))]
     public static void TechIsActuallyFree(ref int __result, TechData techData, PlayerState playerState, GameState state)
     {
-        if (EligibleFreeTech() && playerState.Id == GameManager.LocalPlayer.Id)
+        if (EligibleFreeTech(playerState))
         {
             __result = 0;
         }
@@ -424,10 +429,9 @@ public static class Main
     [HarmonyPatch(typeof(ResearchAction), nameof(ResearchAction.Execute))]
     private static void RemoveOneFreeTechReward(ResearchAction __instance, GameState state)
     {
-        if (__instance.PlayerId != GameManager.LocalPlayer.Id) return;
-        if (EligibleFreeTech())
+        state.TryGetPlayer(__instance.PlayerId, out PlayerState player);
+        if (EligibleFreeTech(player))
         {
-            PlayerState player = GameManager.LocalPlayer;
             var cities = player.GetCityTiles(state);
             foreach (TileData city in cities)
             {
