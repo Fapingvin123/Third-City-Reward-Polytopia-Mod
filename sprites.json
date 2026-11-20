@@ -1,13 +1,13 @@
 {
-	"weapon_club_rewardwarrior__": {
+	"weapon_club_rewardwarrior": {
 		"pixelsPerUnit": 3000,	
 		"pivot": [0.99, 0.1]
 	},
-	"weapon_club_rewardwarrior_outline__": {
+	"weapon_club_rewardwarrior_outline": {
 		"pixelsPerUnit": 3000,	
 		"pivot": [0.99, 0.1]
 	},
-	"barracks__": {
+	"barracks": {
 		"pixelsPerUnit": 2000,
 		"pivot": [0.5, 0.02]
 	}

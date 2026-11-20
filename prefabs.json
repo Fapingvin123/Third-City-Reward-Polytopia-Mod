@@ -1,0 +1,57 @@
+{
+    "units": [
+        {
+			"skinnedKey": {
+				"unitType": "rewardwarrior",
+				"tribeType": "none",
+				"skinType": "default"
+			},
+			"headPositionMarker": "Head",
+			"visualParts": [
+				{
+					"defaultSpriteName": "head",
+					"skinningLogic": "UseTribe",
+					"coordinates": [
+						-0.013,
+						0.215
+					],
+					"sortingOrderOverride": 2,
+					"outlineSortingOrderOverride": -1
+				},
+				{
+					"defaultSpriteName": "body_default",
+					"skinningLogic": "UseTribe",
+					"coordinates": [
+						-0.012,
+						0.147
+					],
+					"sortingOrderOverride": 1,
+					"outlineSortingOrderOverride": -1
+				},
+				{
+					"defaultSpriteName": "bodytint_default",
+					"skinningLogic": "UseTribe",
+					"improvementSkinningLogic": "TileOwner",
+					"coordinates": [
+						-0.012,
+						0.147
+					],
+					"tintable": true,
+					"sortingOrderOverride": 0,
+					"outlineSortingOrderOverride": -1
+				},
+				{
+					"defaultSpriteName": "weapon_club_rewardwarrior",
+					"skinningLogic": "UseTribe",
+					"improvementSkinningLogic": "TileOwner",
+					"coordinates": [
+						-0.0426,
+						0.1245
+					],
+					"sortingOrderOverride": 3,
+					"outlineSortingOrderOverride": -1
+				}
+			]
+		}
+    ]
+}

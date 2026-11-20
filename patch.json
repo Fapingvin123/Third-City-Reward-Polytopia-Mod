@@ -70,7 +70,6 @@
 			],
 			"weapon": 1,
 			"promotionLimit": 3,
-            "prefab": "warrior",
 			"idx": -1
 		}
     },
